@@ -37,6 +37,43 @@
             color: #333;
             margin-top: 20px;
         }
+        .menu-title {
+            font-size: 20px;
+            color: #555;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+        .menu-section {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 10px;
+            margin: 10px 20px;
+        }
+        .menu-btn {
+            background: white;
+            border: 2px solid #90caf9;
+            border-radius: 8px;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.1s;
+            color: #333;
+        }
+        .menu-btn:hover {
+            background: #bbdefb;
+            transform: translateY(-2px);
+        }
+        .menu-btn:active {
+            transform: scale(0.95);
+            background: #2196f3;
+            color: white;
+        }
+        
         .target-item {
             font-size: 24px;
             margin: 20px;
@@ -49,6 +86,22 @@
             font-size: 32px;
             color: #d32f2f;
             font-weight: bold;
+            margin-top: 10px;
+        }
+        .cart-clear-btn {
+            background-color: #ff9800;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            margin: 10px 0;
+            transition: opacity 0.2s;
+        }
+        .cart-clear-btn:hover {
+            opacity: 0.8;
         }
         .current-amount {
             font-size: 28px;
@@ -134,10 +187,17 @@
     <div class="awning"></div>
     <h1>🏫 學校小食店</h1>
     
+    <div class="menu-title">👇 請點擊餐單，可選擇多件物品 👇</div>
+    <div id="menu-container" class="menu-section">
+        <!-- 餐單按鈕會由 JavaScript 自動生成 -->
+    </div>
+    
+    <!-- 購物單區塊 -->
     <div class="target-item">
-        <div id="item-name" style="font-size: 40px;">🍢</div>
-        <div>請購買：<span id="item-text" style="font-weight: bold;">魚蛋</span></div>
-        <div class="price-tag">需付款：$<span id="target-price">0.0</span></div>
+        <div id="cart-emojis" style="font-size: 40px; margin-bottom: 10px;">🛒</div>
+        <div>你的購物單：<span id="cart-text" style="font-weight: bold; color: #555;">尚未點餐</span></div>
+        <button class="cart-clear-btn" onclick="clearCart()">🗑️ 清除購物單</button>
+        <div class="price-tag">總共需付款：$<span id="target-price">0.0</span></div>
     </div>
 
     <div class="current-amount">
@@ -224,29 +284,74 @@
         { name: '薯片', emoji: '🥔', price: 10.5 },
         { name: '珍寶炸雞髀', emoji: '🍗', price: 22.0 },
         { name: '豪華零食拼盤', emoji: '🍱', price: 65.5 },
-        { name: '班級慶祝大蛋糕', emoji: '🎂', price: 120.0 }
+        { name: '班級大蛋糕', emoji: '🎂', price: 120.0 }
     ];
 
     let currentTotal = 0;
     let targetPrice = 0;
+    let cart = []; // 用來儲存學生點選的所有物品
     
-    // 載入掌聲音效 (使用 Google 官方開源音效庫)
+    // 載入掌聲音效
     const applauseSound = new Audio('https://actions.google.com/sounds/v1/crowds/light_applause.ogg');
 
     function formatMoney(amount) {
         return amount.toFixed(1);
     }
 
-    function initGame() {
-        const randomItem = items[Math.floor(Math.random() * items.length)];
-        targetPrice = randomItem.price;
+    // 動態生成餐單按鈕
+    function renderMenu() {
+        const menuContainer = document.getElementById('menu-container');
+        menuContainer.innerHTML = ''; 
         
-        document.getElementById('item-name').textContent = randomItem.emoji;
-        document.getElementById('item-text').textContent = randomItem.name;
-        document.getElementById('target-price').textContent = formatMoney(targetPrice);
-        
+        items.forEach((item, index) => {
+            const btn = document.createElement('button');
+            btn.className = 'menu-btn';
+            btn.innerHTML = `➕ ${item.emoji} ${item.name} ($${formatMoney(item.price)})`;
+            btn.onclick = () => addToCart(index);
+            menuContainer.appendChild(btn);
+        });
+    }
+
+    // 將物品加入購物單
+    function addToCart(index) {
+        const selectedItem = items[index];
+        cart.push(selectedItem); // 加入陣列
+        updateCartDisplay();
+        resetAmount(); // 每次點餐重新計算付款
+    }
+
+    // 清除購物單
+    function clearCart() {
+        cart = [];
+        updateCartDisplay();
         resetAmount();
-        document.getElementById('message').textContent = '';
+    }
+
+    // 更新畫面上的購物單顯示
+    function updateCartDisplay() {
+        if (cart.length === 0) {
+            document.getElementById('cart-emojis').textContent = '🛒';
+            document.getElementById('cart-text').textContent = '尚未點餐';
+            targetPrice = 0;
+        } else {
+            // 把購物車裡的所有 Emoji 組合起來
+            let emojis = cart.map(item => item.emoji).join(' ');
+            // 把購物車裡的所有食物名稱組合起來 (用 + 號連接)
+            let names = cart.map(item => item.name).join(' + ');
+            // 計算總價
+            targetPrice = cart.reduce((sum, item) => sum + item.price, 0);
+
+            document.getElementById('cart-emojis').textContent = emojis;
+            document.getElementById('cart-text').textContent = names;
+        }
+        
+        document.getElementById('target-price').textContent = formatMoney(targetPrice);
+    }
+
+    // 遊戲初始化
+    function initGame() {
+        renderMenu();
+        clearCart(); 
     }
 
     function addMoney(amount) {
@@ -293,8 +398,14 @@
     function checkPayment() {
         const messageEl = document.getElementById('message');
         
+        if (cart.length === 0) {
+            messageEl.textContent = '請先點擊上方餐單選擇小食呀！';
+            messageEl.className = 'error';
+            return;
+        }
+
         if (currentTotal === targetPrice) {
-            // 成功：文字 + 煙花 + 掌聲
+            // 成功
             messageEl.textContent = '🎉 購買成功！好叻呀！';
             messageEl.className = 'success';
             
@@ -302,20 +413,26 @@
             applauseSound.play();
             
             launchFireworks(); 
-            setTimeout(initGame, 3500); 
+            
+            // 3.5秒後清空購物車準備下一次購物
+            setTimeout(() => {
+                clearCart();
+            }, 3500); 
+            
         } else if (currentTotal > targetPrice) {
-            // 失敗 (給多)：文字鼓勵
+            // 失敗 (給多)
             let change = Math.round((currentTotal - targetPrice) * 10) / 10;
             messageEl.textContent = `畀多咗啦！需要找回 $${formatMoney(change)}。唔緊要，再試下啦！💪`;
             messageEl.className = 'error';
         } else {
-            // 失敗 (給少)：文字鼓勵
+            // 失敗 (給少)
             let short = Math.round((targetPrice - currentTotal) * 10) / 10;
             messageEl.textContent = `還差 $${formatMoney(short)}。加油，差少少就計啱啦！💪`;
             messageEl.className = 'error';
         }
     }
 
+    // 啟動遊戲
     initGame();
 </script>
 
