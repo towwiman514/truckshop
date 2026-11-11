@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>香港小食店購物遊戲</title>
+    <!-- 引入煙花特效庫 -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', 'Microsoft JhengHei', sans-serif;
+            background-color: #f0f8ff;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        .shop-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .awning {
+            height: 60px;
+            background: repeating-linear-gradient(
+                90deg,
+                #ff6b6b,
+                #ff6b6b 40px,
+                #ffffff 40px,
+                #ffffff 80px
+            );
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-top: 20px;
+        }
+        .target-item {
+            font-size: 24px;
+            margin: 20px;
+            padding: 20px;
+            background: #fff3cd;
+            border-radius: 10px;
+            border: 2px dashed #ffc107;
+        }
+        .price-tag {
+            font-size: 32px;
+            color: #d32f2f;
+            font-weight: bold;
+        }
+        .current-amount {
+            font-size: 28px;
+            color: #388e3c;
+            margin: 20px;
+            font-weight: bold;
+        }
+        .currency-section {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        .money-btn {
+            background: white;
+            border: 2px solid #ddd;
+            cursor: pointer;
+            transition: transform 0.1s, border 0.2s, box-shadow 0.2s;
+            padding: 10px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 130px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .money-btn:hover {
+            transform: translateY(-5px);
+            border: 2px solid #2196F3;
+            box-shadow: 0 6px 12px rgba(33, 150, 243, 0.3);
+        }
+        .money-btn:active {
+            transform: scale(0.95);
+        }
+        .money-img {
+            width: 100%;
+            height: 70px;
+            object-fit: contain;
+            margin-bottom: 8px;
+        }
+        .money-label {
+            font-size: 16px;
+            font-weight: bold;
+            color: #444;
+        }
+        .controls {
+            margin: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        button.action-btn {
+            padding: 15px 30px;
+            font-size: 20px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            transition: opacity 0.2s;
+        }
+        button.action-btn:hover {
+            opacity: 0.9;
+        }
+        .pay-btn { background-color: #4CAF50; }
+        .reset-btn { background-color: #f44336; }
+        #message {
+            font-size: 24px;
+            font-weight: bold;
+            height: 40px;
+            margin-bottom: 20px;
+        }
+        .success { color: #4CAF50; }
+        .error { color: #ff9800; }
+    </style>
+</head>
+<body>
+
+<div class="shop-container">
+    <div class="awning"></div>
+    <h1>🏫 學校小食店</h1>
+    
+    <div class="target-item">
+        <div id="item-name" style="font-size: 40px;">🍢</div>
+        <div>請購買：<span id="item-text" style="font-weight: bold;">魚蛋</span></div>
+        <div class="price-tag">需付款：$<span id="target-price">0.0</span></div>
+    </div>
+
+    <div class="current-amount">
+        已投入金額：$<span id="current-total">0.0</span>
+    </div>
+
+    <div id="message"></div>
+
+    <div class="controls">
+        <button class="action-btn pay-btn" onclick="checkPayment()">✅ 確認付款</button>
+        <button class="action-btn reset-btn" onclick="resetAmount()">🔄 重新計算</button>
+    </div>
+
+    <!-- 貨幣選擇區 -->
+    <div class="currency-section">
+        <!-- 毫子區 -->
+        <button class="money-btn" onclick="addMoney(0.1)">
+            <img src="1毫.jpeg" alt="1毫" class="money-img" onerror="this.src='https://via.placeholder.com/110x70/CD7F32/FFFFFF?text=10c'">
+            <span class="money-label">$0.1</span>
+        </button>
+        <button class="money-btn" onclick="addMoney(0.2)">
+            <img src="2毫.jpeg" alt="2毫" class="money-img" onerror="this.src='https://via.placeholder.com/110x70/DAA520/FFFFFF?text=20c'">
+            <span class="money-label">$0.2</span>
+        </button>
+        <button class="money-btn" onclick="addMoney(0.5)">
+            <img src="5毫.jpeg" alt="5毫" class="money-img" onerror="this.src='https://via.placeholder.com/110x70/DAA520/FFFFFF?text=50c'">
+            <span class="money-label">$0.5</span>
+        </button>
+
+        <!-- 硬幣區 -->
+        <button class="money-btn" onclick="addMoney(1)">
+            <img src="1蚊.jpeg" alt="1蚊" class="money-img" onerror="this.src='https://via.placeholder.com/110x70/C0C0C0/000000?text=$1'">
+            <span class="money-label">$1</span>
+        </button>
+        <button class="money-btn" onclick="addMoney(2)">
+            <img src="2蚊硬幣.jpeg" alt="2蚊" class="money-img" onerror="this.src='https://via.placeholder.com/110x70/C0C0C0/000000?text=$2'">
+            <span class="money-label">$2</span>
+        </button>
+        <button class="money-btn" onclick="addMoney(5)">
+            <img src="5蚊硬幣.jpeg" alt="5蚊" class="money-img" onerror="this.src='https://via.placeholder.com/110x70/C0C0C0/000000?text=$5'">
+            <span class="money-label">$5</span>
+        </button>
+        <button class="money-btn" onclick="addMoney(10)">
+            <img src="10蚊硬幣.jpeg" alt="10蚊硬幣" class="money-img" onerror="this.src='https://via.placeholder.com/110x70/DAA520/000000?text=$10'">
+            <span class="money-label">$10 (硬幣)</span>
+        </button>
+
+        <!-- 紙幣區 -->
+        <button class="money-btn" onclick="addMoney(10)">
+            <img src="10蚊.jpeg" alt="10蚊紙幣" class="money-img" onerror="this.src='https://via.placeholder.com/110x70/8A2BE2/FFFFFF?text=$10'">
+            <span class="money-label">$10 (紙幣)</span>
+        </button>
+        <button class="money-btn" onclick="addMoney(20)">
+            <img src="20蚊.jpeg" alt="20蚊" class="money-img" onerror="this.src='https://via.placeholder.com/110x70/1E90FF/FFFFFF?text=$20'">
+            <span class="money-label">$20</span>
+        </button>
+        <button class="money-btn" onclick="addMoney(50)">
+            <img src="50蚊.jpeg" alt="50蚊" class="money-img" onerror="this.src='https://via.placeholder.com/110x70/32CD32/FFFFFF?text=$50'">
+            <span class="money-label">$50</span>
+        </button>
+        <button class="money-btn" onclick="addMoney(100)">
+            <img src="100蚊.jpeg" alt="100蚊" class="money-img" onerror="this.src='https://via.placeholder.com/110x70/DC143C/FFFFFF?text=$100'">
+            <span class="money-label">$100</span>
+        </button>
+        <button class="money-btn" onclick="addMoney(500)">
+            <img src="500蚊.jpeg" alt="500蚊" class="money-img" onerror="this.src='https://via.placeholder.com/110x70/8B4513/FFFFFF?text=$500'">
+            <span class="money-label">$500</span>
+        </button>
+        <button class="money-btn" onclick="addMoney(1000)">
+            <img src="1000蚊.jpeg" alt="1000蚊" class="money-img" onerror="this.src='https://via.placeholder.com/110x70/FFA500/000000?text=$1000'">
+            <span class="money-label">$1000</span>
+        </button>
+    </div>
+</div>
+
+<script>
+    const items = [
+        { name: '燒賣', emoji: '🥟', price: 6.5 },
+        { name: '魚蛋', emoji: '🍢', price: 8.2 },
+        { name: '維他奶', emoji: '🧃', price: 5.5 },
+        { name: '腸仔', emoji: '🌭', price: 4.0 },
+        { name: '撈麵', emoji: '🍜', price: 12.5 },
+        { name: '三文治', emoji: '🥪', price: 15.2 },
+        { name: '薯片', emoji: '🥔', price: 10.5 },
+        { name: '珍寶炸雞髀', emoji: '🍗', price: 22.0 },
+        { name: '豪華零食拼盤', emoji: '🍱', price: 65.5 },
+        { name: '班級慶祝大蛋糕', emoji: '🎂', price: 120.0 }
+    ];
+
+    let currentTotal = 0;
+    let targetPrice = 0;
+    
+    // 載入掌聲音效 (使用 Google 官方開源音效庫)
+    const applauseSound = new Audio('https://actions.google.com/sounds/v1/crowds/light_applause.ogg');
+
+    function formatMoney(amount) {
+        return amount.toFixed(1);
+    }
+
+    function initGame() {
+        const randomItem = items[Math.floor(Math.random() * items.length)];
+        targetPrice = randomItem.price;
+        
+        document.getElementById('item-name').textContent = randomItem.emoji;
+        document.getElementById('item-text').textContent = randomItem.name;
+        document.getElementById('target-price').textContent = formatMoney(targetPrice);
+        
+        resetAmount();
+        document.getElementById('message').textContent = '';
+    }
+
+    function addMoney(amount) {
+        currentTotal += amount;
+        currentTotal = Math.round(currentTotal * 10) / 10;
+        document.getElementById('current-total').textContent = formatMoney(currentTotal);
+        document.getElementById('message').textContent = '';
+    }
+
+    function resetAmount() {
+        currentTotal = 0;
+        document.getElementById('current-total').textContent = formatMoney(currentTotal);
+        document.getElementById('message').textContent = '';
+    }
+
+    function launchFireworks() {
+        var duration = 3000;
+        var animationEnd = Date.now() + duration;
+        var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
+
+        function randomInRange(min, max) {
+            return Math.random() * (max - min) + min;
+        }
+
+        var interval = setInterval(function() {
+            var timeLeft = animationEnd - Date.now();
+
+            if (timeLeft <= 0) {
+                return clearInterval(interval);
+            }
+
+            var particleCount = 50 * (timeLeft / duration);
+            confetti(Object.assign({}, defaults, { 
+                particleCount,
+                origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+            }));
+            confetti(Object.assign({}, defaults, { 
+                particleCount,
+                origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+            }));
+        }, 250);
+    }
+
+    function checkPayment() {
+        const messageEl = document.getElementById('message');
+        
+        if (currentTotal === targetPrice) {
+            // 成功：文字 + 煙花 + 掌聲
+            messageEl.textContent = '🎉 購買成功！好叻呀！';
+            messageEl.className = 'success';
+            
+            applauseSound.currentTime = 0; 
+            applauseSound.play();
+            
+            launchFireworks(); 
+            setTimeout(initGame, 3500); 
+        } else if (currentTotal > targetPrice) {
+            // 失敗 (給多)：文字鼓勵
+            let change = Math.round((currentTotal - targetPrice) * 10) / 10;
+            messageEl.textContent = `畀多咗啦！需要找回 $${formatMoney(change)}。唔緊要，再試下啦！💪`;
+            messageEl.className = 'error';
+        } else {
+            // 失敗 (給少)：文字鼓勵
+            let short = Math.round((targetPrice - currentTotal) * 10) / 10;
+            messageEl.textContent = `還差 $${formatMoney(short)}。加油，差少少就計啱啦！💪`;
+            messageEl.className = 'error';
+        }
+    }
+
+    initGame();
+</script>
+
+</body>
+</html>
